@@ -7,7 +7,7 @@ Modifications for the BQ27427 by Edrean Ernst.
 
 The MIT License (MIT)
 
-Copyright (c) 2016 SparkFun Electronics, Inc.
+Copyright (c) 2016 SparkFun Electronics, Inc.  
 Copyright (c) 2025 Edrean Ernst
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
