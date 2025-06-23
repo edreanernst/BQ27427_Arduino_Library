@@ -29,16 +29,16 @@ See LICENSE.txt for full license terms.
  ************************** Initialization Functions *************************
  *****************************************************************************/
 // Initializes class variables
-BQ27427::BQ27427() : _deviceAddress(BQ72441_I2C_ADDRESS), _sealFlag(false), _userConfigControl(false)
+BQ27427::BQ27427() : _deviceAddress(BQ27427_I2C_ADDRESS), _sealFlag(false), _userConfigControl(false)
 {
 }
 
 // Initializes I2C and verifies communication with the BQ27427.
-bool BQ27427::begin(void)
+bool BQ27427::begin(int sda, int scl)
 {
 	uint16_t deviceID = 0;
 	
-	Wire.begin(); // Initialize I2C master
+	Wire.begin(sda, scl); // Initialize I2C master
 	
 	deviceID = deviceType(); // Read deviceType from BQ27427
 	
@@ -63,6 +63,12 @@ bool BQ27427::setCapacity(uint16_t capacity)
 	return writeExtendedData(BQ27427_ID_STATE, 6, capacityData, 2);
 }
 
+// Get the design energy of the connected battery.
+uint16_t BQ27427::designEnergy(void)
+{
+	return (readExtendedData(BQ27427_ID_STATE, 8) << 8 | readExtendedData(BQ27427_ID_STATE, 9));
+}
+
 // Configures the design energy of the connected battery.
 bool BQ27427::setDesignEnergy(uint16_t energy)
 {
@@ -74,6 +80,12 @@ bool BQ27427::setDesignEnergy(uint16_t energy)
 	uint8_t enLSB = energy & 0x00FF;
 	uint8_t energyData[2] = {enMSB, enLSB};
 	return writeExtendedData(BQ27427_ID_STATE, 8, energyData, 2);
+}
+
+// Get the terminate voltage of the connected battery.
+uint16_t BQ27427::terminateVoltage(void)
+{
+	return (readExtendedData(BQ27427_ID_STATE, 10) << 8 | readExtendedData(BQ27427_ID_STATE, 11));
 }
 
 // Configures the terminate voltage.
@@ -91,6 +103,12 @@ bool BQ27427::setTerminateVoltage(uint16_t voltage)
 	uint8_t tvLSB = voltage & 0x00FF;
 	uint8_t tvData[2] = {tvMSB, tvLSB};
 	return writeExtendedData(BQ27427_ID_STATE, 10, tvData, 2);
+}
+
+// Get the taper rate of the connected battery.
+uint16_t BQ27427::taperRate(void)
+{
+	return (readExtendedData(BQ27427_ID_STATE, 21) << 8 | readExtendedData(BQ27427_ID_STATE, 22));
 }
 
 // Configures taper rate of connected battery.
@@ -169,7 +187,7 @@ uint16_t BQ27427::capacity(capacity_measure type)
 		capacity = readWord(BQ27427_COMMAND_FULL_CAP_UNFL);
 		break;
 	case DESIGN:
-		capacity = readWord(BQ27427_EXTENDED_CAPACITY);
+		capacity = (readExtendedData(BQ27427_ID_STATE, 6) << 8 | readExtendedData(BQ27427_ID_STATE, 7));
 	}
 	
 	return capacity;
@@ -406,6 +424,64 @@ uint16_t BQ27427::deviceType(void)
 	return readControlWord(BQ27427_CONTROL_DEVICE_TYPE);
 }
 
+// Configures the chemistry profile of the connected battery.
+bool BQ27427::setChemID(chemistry_profiles chem_id)
+{
+	// if (!_userConfigControl) 
+	// {
+	// 	if(!enterConfig())
+	// 		return false; // If we can't enter config mode, return false
+	// }
+
+	if (sealed())
+	{
+		_sealFlag = true;
+		unseal(); // Must be unsealed before making changes
+	}
+
+	uint16_t old_chem_id = readControlWord(BQ27427_CONTROL_CHEM_ID);
+
+	if (executeControlWord(BQ27427_CONTROL_SET_CFGUPDATE))
+	{
+		int16_t timeout = BQ72441_I2C_TIMEOUT;
+		while ((timeout--) && (!(flags() & BQ27427_FLAG_CFGUPMODE)))
+			delay(1);
+		
+		if (timeout > 0)
+		{
+			if (executeControlWord(chem_id)) {
+				delay(100); // Wait for the BQ27427 to process the command
+				if (softReset())
+				{
+					int16_t timeout = BQ72441_I2C_TIMEOUT;
+					while ((timeout--) && ((flags() & BQ27427_FLAG_CFGUPMODE)))
+						delay(1);
+					if (timeout > 0)
+					{
+						uint16_t new_chem_id = readControlWord(BQ27427_CONTROL_CHEM_ID);
+						if (new_chem_id != old_chem_id) {
+							if (_sealFlag) seal(); // Seal back up if we IC was sealed coming in
+							return true;
+						}
+						return false;
+					}
+				}
+				return false;
+			} else {
+				return false;
+			}
+		}
+	}
+	return false;
+}
+
+// Reads and returns the battery chemistry profile.
+chemistry_profiles BQ27427::chemID(void) 
+{
+	uint16_t chem_id = readControlWord(BQ27427_CONTROL_CHEM_ID);
+	return static_cast<chemistry_profiles>(chem_id);
+}
+
 // Enter configuration mode - set userControl if calling from an Arduino sketch
 // and you want control over when to exitConfig
 bool BQ27427::enterConfig(bool userControl)
@@ -431,35 +507,23 @@ bool BQ27427::enterConfig(bool userControl)
 	return false;
 }
 
-// Exit configuration mode with the option to perform a resimulation
-bool BQ27427::exitConfig(bool resim)
+// Exit configuration mode
+bool BQ27427::exitConfig(bool userControl)
 {
-	// There are two methods for exiting config mode:
-	//    1. Execute the EXIT_CFGUPDATE command
-	//    2. Execute the SOFT_RESET command
-	// EXIT_CFGUPDATE exits config mode _without_ an OCV (open-circuit voltage)
-	// measurement, and without resimulating to update unfiltered-SoC and SoC.
-	// If a new OCV measurement or resimulation is desired, SOFT_RESET or
-	// EXIT_RESIM should be used to exit config mode.
-	if (resim)
+	if (userControl) _userConfigControl = false;
+
+	if (softReset())
 	{
-		if (softReset())
+		int16_t timeout = BQ72441_I2C_TIMEOUT;
+		while ((timeout--) && ((flags() & BQ27427_FLAG_CFGUPMODE)))
+			delay(1);
+		if (timeout > 0)
 		{
-			int16_t timeout = BQ72441_I2C_TIMEOUT;
-			while ((timeout--) && ((flags() & BQ27427_FLAG_CFGUPMODE)))
-				delay(1);
-			if (timeout > 0)
-			{
-				if (_sealFlag) seal(); // Seal back up if we IC was sealed coming in
-				return true;
-			}
+			if (_sealFlag) seal(); // Seal back up if we IC was sealed coming in
+			return true;
 		}
-		return false;
 	}
-	else
-	{
-		return executeControlWord(BQ27427_CONTROL_EXIT_CFGUPDATE);
-	}	
+	return false;
 }
 
 // Read the flags() command
@@ -472,6 +536,22 @@ uint16_t BQ27427::flags(void)
 uint16_t BQ27427::status(void)
 {
 	return readControlWord(BQ27427_CONTROL_STATUS);
+}
+
+// Issue a factory reset to the BQ27427
+bool BQ27427::reset(void)
+{
+	if (!_userConfigControl) enterConfig(false); // Enter config mode if not already in it
+	
+	if (executeControlWord(BQ27427_CONTROL_RESET))
+	{
+		if (!_userConfigControl) exitConfig();
+		return true;
+	} 
+	else 
+	{
+		return false;
+	}
 }
 
 /***************************** Private Functions *****************************/
@@ -504,7 +584,7 @@ bool BQ27427::unseal(void)
 // Read the 16-bit opConfig register from extended data
 uint16_t BQ27427::opConfig(void)
 {
-	return readWord(BQ27427_EXTENDED_OPCONFIG);
+	return readExtendedData(BQ27427_ID_REGISTERS, 0);
 }
 
 // Write the 16-bit opConfig register in extended data
@@ -665,7 +745,11 @@ bool BQ27427::writeExtendedData(uint8_t classID, uint8_t offset, uint8_t * data,
 	if (len > 32)
 		return false;
 	
-	if (!_userConfigControl) enterConfig(false);
+	if (!_userConfigControl)
+	{
+		if (!enterConfig(false)) 
+			return false; // Return false if enterConfig fails
+	}
 	
 	if (!blockDataControl()) // // enable block data memory control
 		return false; // Return false if enable fails
@@ -681,14 +765,21 @@ bool BQ27427::writeExtendedData(uint8_t classID, uint8_t offset, uint8_t * data,
 	{
 		// Write to offset, mod 32 if offset is greater than 32
 		// The blockDataOffset above sets the 32-bit block
-		writeBlockData((offset % 32) + i, data[i]);
+		if (!writeBlockData((offset % 32) + i, data[i]))
+			return false; // Return false if writeBlockData fails
 	}
 	
 	// Write new checksum using BlockDataChecksum (0x60)
 	uint8_t newCsum = computeBlockChecksum(); // Compute the new checksum
-	writeBlockChecksum(newCsum);
+	if (!writeBlockChecksum(newCsum))
+		return false; // Return false if checksum write fails
 
-	if (!_userConfigControl) exitConfig();
+	if (!_userConfigControl)
+	{
+		delay(10); // Wait for BQ27427 to process the write
+		if (!exitConfig())
+			return false; // Return false if exitConfig fails
+	}
 	
 	return true;
 }

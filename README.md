@@ -7,7 +7,7 @@ This Arduino library abstracts away all of the low-level I2C communication, so y
 
 Thanks to:
 
-* [Sparkfun Electronics, Inc.](https://github.com/sparkfun) for the BQ27441-G1A library which this library is heavily based on.
+* [Sparkfun Electronics, Inc.](https://github.com/sparkfun) for the [BQ27441-G1A library](https://github.com/sparkfun/SparkFun_BQ27441_Arduino_Library) which this library is heavily based on.
 
 Repository Contents
 -------------------

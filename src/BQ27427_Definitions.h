@@ -71,17 +71,16 @@ See LICENSE.md for full license terms.
 #define BQ27427_CONTROL_CHEM_ID			0x08
 #define BQ27427_CONTROL_BAT_INSERT		0x0C
 #define BQ27427_CONTROL_BAT_REMOVE		0x0D
-#define BQ27427_CONTROL_SET_HIBERNATE	0x11
-#define BQ27427_CONTROL_CLEAR_HIBERNATE	0x12
 #define BQ27427_CONTROL_SET_CFGUPDATE	0x13
 #define BQ27427_CONTROL_SHUTDOWN_ENABLE	0x1B
 #define BQ27427_CONTROL_SHUTDOWN		0x1C
 #define BQ27427_CONTROL_SEALED			0x20
 #define BQ27427_CONTROL_PULSE_SOC_INT	0x23
+#define BQ27427_CONTROL_CHEM_A          0x30
+#define BQ27427_CONTROL_CHEM_B          0x31
+#define BQ27427_CONTROL_CHEM_C          0x32
 #define BQ27427_CONTROL_RESET			0x41
 #define BQ27427_CONTROL_SOFT_RESET		0x42
-#define BQ27427_CONTROL_EXIT_CFGUPDATE	0x43
-#define BQ27427_CONTROL_EXIT_RESIM		0x44
 
 ///////////////////////////////////////////
 // Control Status Word - Bit Definitions //
@@ -100,7 +99,6 @@ See LICENSE.md for full license terms.
 #define BQ27427_STATUS_QMAX_UP		(1<<9)
 #define BQ27427_STATUS_RES_UP		(1<<8)
 #define BQ27427_STATUS_INITCOMP		(1<<7)
-#define BQ27427_STATUS_HIBERNATE	(1<<6)
 #define BQ27427_STATUS_SLEEP		(1<<4)
 #define BQ27427_STATUS_LDMD			(1<<3)
 #define BQ27427_STATUS_RUP_DIS		(1<<2)
@@ -117,6 +115,7 @@ See LICENSE.md for full license terms.
 #define BQ27427_FLAG_FC			(1<<9)
 #define BQ27427_FLAG_CHG		(1<<8)
 #define BQ27427_FLAG_OCVTAKEN	(1<<7)
+#define BQ27427_FLAG_DOD_CRRCT	(1<<6)
 #define BQ27427_FLAG_ITPOR		(1<<5)
 #define BQ27427_FLAG_CFGUPMODE	(1<<4)
 #define BQ27427_FLAG_BAT_DET	(1<<3)
@@ -130,8 +129,6 @@ See LICENSE.md for full license terms.
 // Extended data commands offer additional functionality beyond the standard
 // set of commands. They are used in the same manner; however, unlike standard
 // commands, extended commands are not limited to 2-byte words.
-#define BQ27427_EXTENDED_OPCONFIG	0x3A // OpConfig()
-#define BQ27427_EXTENDED_CAPACITY	0x3C // DesignCapacity()
 #define BQ27427_EXTENDED_DATACLASS	0x3E // DataClass()
 #define BQ27427_EXTENDED_DATABLOCK	0x3F // DataBlock()
 #define BQ27427_EXTENDED_BLOCKDATA	0x40 // BlockData()
@@ -146,16 +143,18 @@ See LICENSE.md for full license terms.
 // Configuration Classes
 #define BQ27427_ID_SAFETY			2   // Safety
 #define BQ27427_ID_CHG_TERMINATION	36  // Charge Termination
-#define BQ27427_ID_CONFIG_DATA		48  // Data
+// #define BQ27427_ID_CONFIG_DATA		48  // Data
 #define BQ27427_ID_DISCHARGE		49  // Discharge
 #define BQ27427_ID_REGISTERS		64  // Registers
-#define BQ27427_ID_POWER			68  // Power
+// #define BQ27427_ID_POWER			68  // Power
 // Gas Gauging Classes
 #define BQ27427_ID_IT_CFG			80  // IT Cfg
 #define BQ27427_ID_CURRENT_THRESH	81  // Current Thresholds
 #define BQ27427_ID_STATE			82  // State
 // Ra Tables Classes
 #define BQ27427_ID_R_A_RAM			89  // R_a RAM
+// Chemistry Info Classes
+#define BQ27427_ID_CHEM_DATA        109  // Chem Data
 // Calibration Classes
 #define BQ27427_ID_CALIB_DATA		104 // Data
 #define BQ27427_ID_CC_CAL			105 // CC Cal
@@ -167,10 +166,11 @@ See LICENSE.md for full license terms.
 // OpConfig Register - Bit Definitions //
 /////////////////////////////////////////
 // Bit positions of the OpConfig Register
-#define BQ27427_OPCONFIG_BIE      (1<<13)
-#define BQ27427_OPCONFIG_BI_PU_EN (1<<12)
-#define BQ27427_OPCONFIG_GPIOPOL  (1<<11)
-#define BQ27427_OPCONFIG_SLEEP    (1<<5)
-#define BQ27427_OPCONFIG_RMFCC    (1<<4)
-#define BQ27427_OPCONFIG_BATLOWEN (1<<2)
-#define BQ27427_OPCONFIG_TEMPS    (1<<0)
+#define BQ27427_OPCONFIG_BIE        (1<<13)
+#define BQ27427_OPCONFIG_GPIOPOL    (1<<11)
+#define BQ27427_OPCONFIG_RS_FCT_STP (1<<6)
+#define BQ27427_OPCONFIG_SLEEP      (1<<5)
+#define BQ27427_OPCONFIG_RMFCC      (1<<4)
+#define BQ27427_OPCONFIG_FASTCNV_EN (1<<3)
+#define BQ27427_OPCONFIG_BATLOWEN   (1<<2)
+#define BQ27427_OPCONFIG_TEMPS      (1<<0)

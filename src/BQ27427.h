@@ -29,6 +29,13 @@ See LICENSE.txt for full license terms.
 
 #define BQ72441_I2C_TIMEOUT 2000
 
+// Chemistry profiles
+typedef enum {
+	CHEM_A = BQ27427_CONTROL_CHEM_A,  // 4.35V
+	CHEM_B = BQ27427_CONTROL_CHEM_B, // 4.2V
+	CHEM_C = BQ27427_CONTROL_CHEM_C   // 4.4V
+} chemistry_profiles;
+
 // Parameters for the current() function, to specify which current to read
 typedef enum {
 	AVG,  // Average Current (DEFAULT)
@@ -89,7 +96,20 @@ public:
 		
 		@return true if communication was successful.
 	*/
-	bool begin(void);
+	inline bool begin(void) 
+	{
+		return begin(-1, -1); // Call begin with default parameters
+	}
+
+	/**
+	    Initializes I2C and verifies communication with the BQ27427.
+		Must be called before using any other functions.
+		
+		@param sda pin number for I2C data line
+		@param scl pin number for I2C clock line
+		@return true if communication was successful.
+	*/
+	bool begin(int sda, int scl);
 	
 	/**
 	    Configures the design capacity of the connected battery.
@@ -100,12 +120,26 @@ public:
 	bool setCapacity(uint16_t capacity);
 	
 	/**
+	    Reads and returns the design energy of the connected battery
+		
+		@return design energy in milliWattHours (mWh)
+	*/
+	uint16_t designEnergy(void);
+
+	/**
 	    Configures the design energy of the connected battery.
 		
 		@param energy of battery (unsigned 16-bit value)
 		@return true if energy successfully set.
 	*/
 	bool setDesignEnergy(uint16_t energy);
+
+	/**
+	    Reads and returns the terminate voltage of the connected battery
+		
+		@return terminate voltage in millivolts (mV)
+	*/
+	uint16_t terminateVoltage(void);
 
 	/**
 	    Configures terminate voltage (lowest operational voltage of battery powered circuit)
@@ -115,6 +149,19 @@ public:
 	*/
 	bool setTerminateVoltage(uint16_t voltage);
 
+	/**
+	    Reads and returns the taper rate of the connected battery
+		
+		@return taper rate in 0.1 h units
+	*/
+	uint16_t taperRate(void);
+
+	/**
+	    Configures taper rate of connected battery
+		
+		@param rate in 0.1 h units (unsigned 16-bit value)
+		@return true if taper rate successfully set.
+	*/
 	bool setTaperRate(uint16_t rate);
 
 	/////////////////////////////
@@ -326,6 +373,21 @@ public:
 		@return 16-bit value read from DEVICE_TYPE subcommand
 	*/
 	uint16_t deviceType(void);
+
+	/**
+	    Configures the chemistry profile of the connected battery.
+		
+		@param chem_id enum specifying chemistry profile value to be set
+		@return true if chemistry profile successfully set.
+	*/
+	bool setChemID(chemistry_profiles chem_id);
+
+	/**
+	    Reads and returns the battery chemistry profile.
+		
+		@return chemistry profile enum value
+	*/
+	chemistry_profiles chemID(void);
 	
 	/**
 	    Enter configuration mode - set userControl if calling from an Arduino
@@ -338,12 +400,11 @@ public:
 	bool enterConfig(bool userControl = true);
 	
 	/**
-	    Exit configuration mode with the option to perform a resimulation
+	    Exit configuration mode
 		
-		@param resim is true if resimulation should be performed after exiting
 		@return true on success
 	*/
-	bool exitConfig(bool resim = true);
+	bool exitConfig(bool userControl = false);
 	
 	/**
 	    Read the flags() command
@@ -358,6 +419,13 @@ public:
 		@return 16-bit representation of CONTROL_STATUS subcommand
 	*/
 	uint16_t status(void);
+
+	/**
+	    Issue a factory reset to the BQ27427
+		
+		@return true on success
+	*/	
+	bool reset(void);
 	
 private:
 	uint8_t _deviceAddress;  // Stores the BQ27427's I2C address
