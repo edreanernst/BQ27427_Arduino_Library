@@ -26,7 +26,8 @@ void setup()
     {
         Serial.println("Writing gague config");
 
-        lipo.enterConfig();                 // To configure the values below, you must be in config mode
+        lipo.enterConfig(true);                 // To configure the values below, you must be in config mode
+        lipo.changeCurrentPolarity();           // Change current polarity to positive (default is negative)
         lipo.setCapacity(BATTERY_CAPACITY); // Set the battery capacity
 
         lipo.setDesignEnergy(BATTERY_CAPACITY * 3.7f); // Set the design energy
@@ -42,7 +43,7 @@ void setup()
         */
         lipo.setTaperRate(10 * BATTERY_CAPACITY / TAPER_CURRENT);
 
-        lipo.exitConfig(); // Exit config mode to save changes
+        lipo.exitConfig(true); // Exit config mode to save changes
     }
     else
     {

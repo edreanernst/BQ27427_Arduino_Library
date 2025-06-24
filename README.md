@@ -27,6 +27,7 @@ Documentation
 Version History
 ---------------
 
+* [1.0.1](https://github.com/edreanernst/BQ27427_Arduino_Library/releases/tag/1.0.1) - Add ability to change current sensing polarity.
 * [1.0.0](https://github.com/edreanernst/BQ27427_Arduino_Library/releases/tag/1.0.0) - Initial release of the BQ27427 Arduino Library.
 
 License Information

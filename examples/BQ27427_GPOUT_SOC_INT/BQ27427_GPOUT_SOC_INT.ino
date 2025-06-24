@@ -53,12 +53,12 @@ void setupBQ27427(void)
   // In this example, we'll manually enter and exit config mode. By controlling
   // config mode manually, you can set the chip up faster -- completing all of
   // the set up in a single config mode sweep.
-  lipo.enterConfig(); // To configure the values below, you must be in config mode
+  lipo.enterConfig(true); // To configure the values below, you must be in config mode
   lipo.setCapacity(BATTERY_CAPACITY); // Set the battery capacity
   lipo.setGPOUTPolarity(LOW); // Set GPOUT to active-low
   lipo.setGPOUTFunction(SOC_INT); // Set GPOUT to SOC_INT mode
   lipo.setSOCIDelta(PERCENTAGE_INTERVAL); // Set percentage change integer
-  lipo.exitConfig(); // Exit config mode to save changes
+  lipo.exitConfig(true); // Exit config mode to save changes
 
   // Use lipo.GPOUTPolarity to read from the chip and confirm the changes
   if (lipo.GPOUTPolarity())
