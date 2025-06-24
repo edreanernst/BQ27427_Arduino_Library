@@ -126,6 +126,15 @@ bool BQ27427::setTaperRate(uint16_t rate)
 	return writeExtendedData(BQ27427_ID_STATE, 21, trData, 2);
 }
 
+// Changes the current polarity of the BQ27427.
+bool BQ27427::changeCurrentPolarity(void) 
+{
+	uint8_t calBit0 = readExtendedData(BQ27427_ID_CC_CAL, 5); // Read CC_CAL[0] value
+	calBit0 ^= 0x80; // Toggle bit 7 (0x80)
+	uint8_t calData[1] = {calBit0};
+	return writeExtendedData(BQ27427_ID_CC_CAL, 5, calData, 1);
+}
+
 /*****************************************************************************
  ********************** Battery Characteristics Functions ********************
  *****************************************************************************/
