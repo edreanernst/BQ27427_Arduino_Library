@@ -26,7 +26,7 @@ See LICENSE.md for full license terms.
 // General Constants //
 ///////////////////////
 #define BQ27427_UNSEAL_KEY	0x8000 // Secret code to unseal the BQ27427-G1A
-#define BQ27427_DEVICE_ID	0x0421 // Default device ID
+#define BQ27427_DEVICE_ID	0x0427 // Default device ID
 
 ///////////////////////
 // Standard Commands //

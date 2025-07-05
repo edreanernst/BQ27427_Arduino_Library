@@ -427,7 +427,7 @@ bool BQ27427::pulseGPOUT(void)
  *************************** Control Sub-Commands ****************************
  *****************************************************************************/
 
-// Read the device type - should be 0x0421
+// Read the device type - should be 0x0427
 uint16_t BQ27427::deviceType(void)
 {
 	return readControlWord(BQ27427_CONTROL_DEVICE_TYPE);
