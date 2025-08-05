@@ -405,7 +405,7 @@ public:
 	//////////////////////////
 	
 	/**
-	    Read the device type - should be 0x0421
+	    Read the device type - should be 0x0427
 		
 		@return 16-bit value read from DEVICE_TYPE subcommand
 	*/
