@@ -93,7 +93,7 @@ bool BQ27427::setTerminateVoltage(uint16_t voltage)
 {
 	// Write to STATE subclass (82) of BQ27427 extended memory.
 	// Offset 0x0A (10)
-	// Termiante voltage is a 2-byte piece of data - MSB first
+	// Terminate voltage is a 2-byte piece of data - MSB first
 	// Unit: mV
 	// Min 2500, Max 3700
 	if(voltage<2500) voltage=2500;
@@ -103,6 +103,50 @@ bool BQ27427::setTerminateVoltage(uint16_t voltage)
 	uint8_t tvLSB = voltage & 0x00FF;
 	uint8_t tvData[2] = {tvMSB, tvLSB};
 	return writeExtendedData(BQ27427_ID_STATE, 10, tvData, 2);
+}
+
+// Get the discharge current threshold.
+uint16_t BQ27427::dischargeCurrentThreshold(void)
+{
+	return (readExtendedData(BQ27427_ID_CURRENT_THRESH, 0) << 8 | readExtendedData(BQ27427_ID_CURRENT_THRESH, 1));
+}
+
+// Configures the discharge current threshold.
+bool BQ27427::setdischargeCurrentThreshold(uint16_t value)
+{
+	// Write to STATE subclass (81) of BQ27427 extended memory.
+	// Offset 0x00 (0)
+	// Discharge current threshold is a 2-byte piece of data - MSB first
+	// Unit: 0.1h
+	// Min 0, Max 2000
+	if(value>2000) value=2000;
+	
+	uint8_t dctMSB = value >> 8;
+	uint8_t dctLSB = value & 0x00FF;
+	uint8_t dctData[2] = {dctMSB, dctLSB};
+	return writeExtendedData(BQ27427_ID_CURRENT_THRESH, 0, dctData, 2);
+}
+
+// Get the taper voltage of the connected battery.
+uint16_t BQ27427::taperVoltage(void)
+{
+	return (readExtendedData(BQ27427_ID_CHEM_DATA, 8) << 8 | readExtendedData(BQ27427_ID_CHEM_DATA, 9));
+}
+
+// Configures the taper voltage.
+bool BQ27427::setTaperVoltage(uint16_t voltage)
+{
+	// Write to STATE subclass (109) of BQ27427 extended memory.
+	// Offset 0x08 (8)
+	// Taper voltage is a 2-byte piece of data - MSB first
+	// Unit: mV
+	// Min 0, Max 5000
+	if(voltage>5000) voltage=5000;
+	
+	uint8_t tvMSB = voltage >> 8;
+	uint8_t tvLSB = voltage & 0x00FF;
+	uint8_t tvData[2] = {tvMSB, tvLSB};
+	return writeExtendedData(BQ27427_ID_CHEM_DATA, 8, tvData, 2);
 }
 
 // Get the taper rate of the connected battery.
