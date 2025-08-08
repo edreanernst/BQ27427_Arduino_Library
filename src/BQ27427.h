@@ -145,9 +145,39 @@ public:
 	    Configures terminate voltage (lowest operational voltage of battery powered circuit)
 		
 		@param voltage of battery (unsigned 16-bit value)
-		@return true if energy successfully set.
+		@return true if voltage successfully set.
 	*/
 	bool setTerminateVoltage(uint16_t voltage);
+
+	/**
+	    Reads and returns the discharge current threshold
+		
+		@return discharge current threshold in 0.1h units
+	*/
+	uint16_t dischargeCurrentThreshold(void);
+
+	/**
+	    Configures discharge current threshold
+		
+		@param value in 0.1h units (unsigned 16-bit value)
+		@return true if threshold successfully set.
+	*/
+	bool setdischargeCurrentThreshold(uint16_t value);
+
+	/**
+	    Reads and returns the taper voltage of the connected battery
+		
+		@return taper voltage in millivolts (mV)
+	*/
+	uint16_t taperVoltage(void);
+
+	/**
+	    Configures taper voltage
+		
+		@param voltage of battery (unsigned 16-bit value)
+		@return true if voltage successfully set.
+	*/
+	bool setTaperVoltage(uint16_t voltage);
 
 	/**
 	    Reads and returns the taper rate of the connected battery
